@@ -1,20 +1,22 @@
 package database
 
 import (
-	"database/sql"
-
 	"github.com/hsyntzgl/to-doList-Go/pkg/config"
-	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
-var DB *sql.DB
+var DB *gorm.DB
 
 func ConnectDB() {
 	connStr := config.Config("connectionString")
 
 	var err error
 
-	DB, err = sql.Open("postgres", connStr)
+	DB, err = gorm.Open(postgres.New(postgres.Config{
+		DSN:                  connStr,
+		PreferSimpleProtocol: true,
+	}), &gorm.Config{DisableForeignKeyConstraintWhenMigrating: true})
 
 	if err != nil {
 		panic(err)
