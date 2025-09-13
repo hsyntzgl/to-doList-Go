@@ -6,14 +6,12 @@ import (
 	"gorm.io/gorm"
 )
 
-var DB *gorm.DB
-
-func ConnectDB() {
+func ConnectDB() *gorm.DB {
 	connStr := config.Config("connectionString")
 
 	var err error
 
-	DB, err = gorm.Open(postgres.New(postgres.Config{
+	db, err := gorm.Open(postgres.New(postgres.Config{
 		DSN:                  connStr,
 		PreferSimpleProtocol: true,
 	}), &gorm.Config{DisableForeignKeyConstraintWhenMigrating: true})
@@ -21,4 +19,6 @@ func ConnectDB() {
 	if err != nil {
 		panic(err)
 	}
+
+	return db
 }
