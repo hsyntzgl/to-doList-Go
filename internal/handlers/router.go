@@ -23,7 +23,8 @@ func SetupRoutes(userhandler *user.UserHandler, jwtSecretKey string) *gin.Engine
 		{
 			users := authRequired.Group("/users")
 			{
-				users.POST("/update-user", userhandler.UpdateUser)
+				users.POST("/update-user", userhandler.UpdateCurrentUser)
+				users.DELETE("/delete-account", userhandler.DeleteCurrentUser)
 			}
 		}
 	}

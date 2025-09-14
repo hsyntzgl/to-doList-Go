@@ -23,7 +23,7 @@ type UserService interface {
 	Login(ctx context.Context, email, password string) (string, error)
 	UpdateUser(ctx context.Context, actorID, targetID string, req UpdateUser) error
 	ChangePassword(ctx context.Context, id, oldPassword, newPassword string) error
-	Logout(ctx context.Context) error
+	Delete(ctx context.Context, actorID, targetID string) error
 }
 
 type userService struct {
@@ -143,8 +143,62 @@ func (s *userService) UpdateUser(ctx context.Context, actorID, targetID string, 
 	return nil
 }
 func (s *userService) ChangePassword(ctx context.Context, id, oldPassword, newPassword string) error {
+	user, err := s.userRepo.GetByID(ctx, id)
+
+	if err != nil {
+		if errors.Is(err, repositories.ErrNotFound) {
+			return ErrInvalidCredentials
+		}
+		return err
+	}
+
+	result, err := s.hasher.Verify(oldPassword, user.PasswordHash)
+
+	if err != nil {
+		return err
+	}
+
+	if !result {
+		return ErrInvalidCredentials
+	}
+
+	newPasswordHash, err := s.hasher.Hash(newPassword)
+
+	if err != nil {
+		return err
+	}
+
+	user.PasswordHash = newPasswordHash
+	user.UpdatedAt = time.Now().UTC()
+
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return err
+	}
+
 	return nil
 }
-func (s *userService) Logout(ctx context.Context) error {
+func (s *userService) Delete(ctx context.Context, actorID, targetID string) error {
+	user, err := s.userRepo.GetByID(ctx, actorID)
+
+	if err != nil {
+		if errors.Is(err, repositories.ErrNotFound) {
+			return ErrUserNotFound
+		}
+		return err
+	}
+
+	if actorID != targetID {
+		return ErrForbidden
+	}
+
+	err = s.userRepo.Delete(ctx, user.ID)
+
+	if err != nil {
+		if errors.Is(err, repositories.ErrNotFound) {
+			return ErrUserNotFound
+		}
+		return err
+	}
+
 	return nil
 }

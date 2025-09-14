@@ -1,6 +1,9 @@
 package database
 
 import (
+	"log"
+
+	"github.com/hsyntzgl/to-doList-Go/internal/repository/user"
 	"github.com/hsyntzgl/to-doList-Go/pkg/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -15,6 +18,10 @@ func ConnectDB() *gorm.DB {
 		DSN:                  connStr,
 		PreferSimpleProtocol: true,
 	}), &gorm.Config{DisableForeignKeyConstraintWhenMigrating: true})
+
+	if err := db.AutoMigrate(&user.User{}); err != nil {
+		log.Fatal(err.Error())
+	}
 
 	if err != nil {
 		panic(err)

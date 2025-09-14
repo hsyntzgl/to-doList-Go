@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	app "github.com/hsyntzgl/to-doList-Go/internal/app/user"
+	"github.com/hsyntzgl/to-doList-Go/internal/domain/repositories"
 )
 
 type UserHandler struct {
@@ -58,11 +59,47 @@ func (h *UserHandler) Login(c *gin.Context) {
 
 	c.JSON(http.StatusOK, token)
 }
-func (h *UserHandler) UpdateUser(c *gin.Context) {
+func (h *UserHandler) UpdateCurrentUser(c *gin.Context) {
 	var req app.UpdateUser
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz istek: " + err.Error()})
 		return
 	}
+	actorIDInterface, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Yekilendirme Hatası"})
+		return
+	}
 
+	actorID := actorIDInterface.(string)
+
+	err := h.userService.UpdateUser(c.Request.Context(), actorID, actorID, req)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Kullanıcı bilgileri güncellenirken hata meydana geldi", "message": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Kullanıcı bilgileri başarıyla güncellendi"})
+}
+func (h *UserHandler) DeleteCurrentUser(c *gin.Context) {
+	actorIDInterface, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Yetkilendirme Hatası"})
+		return
+	}
+
+	actorID := actorIDInterface.(string)
+
+	err := h.userService.Delete(c.Request.Context(), actorID, actorID)
+
+	if err != nil {
+		if errors.Is(err, repositories.ErrNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Kullanıcı Bulunamadı"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Sunucu Hatası", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Hesap başarıyla silindi"})
 }
