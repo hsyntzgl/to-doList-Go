@@ -52,7 +52,7 @@ func (r *postgresUserRepository) GetByID(ctx context.Context, id string) (*entit
 	result := r.db.WithContext(ctx).Where("id = ?", id).First(&userModel)
 
 	if result.Error != nil {
-		if errors.Is(result.Error, repositories.ErrNotFound) {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, repositories.ErrNotFound
 		}
 		return nil, result.Error
@@ -79,6 +79,10 @@ func (r *postgresUserRepository) Delete(ctx context.Context, id string) error {
 	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&User{})
 
 	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return repositories.ErrNotFound
+		}
+
 		return result.Error
 	}
 

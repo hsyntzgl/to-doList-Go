@@ -1,12 +1,11 @@
 package user
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	app "github.com/hsyntzgl/to-doList-Go/internal/app/user"
-	"github.com/hsyntzgl/to-doList-Go/internal/domain/repositories"
+	"github.com/hsyntzgl/to-doList-Go/internal/web"
 )
 
 type UserHandler struct {
@@ -27,13 +26,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 	createdUser, err := h.userService.Register(c.Request.Context(), req.Username, req.Email, req.Password)
 
 	if err != nil {
-		if errors.Is(err, app.ErrEmailAllreadyExists) {
-			c.JSON(http.StatusConflict, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Sunucu Hatası", "message ": err.Error()})
+		web.HandlerError(c, err)
 		return
 	}
 	response := ToUserResponse(createdUser)
@@ -49,11 +42,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 	token, err := h.userService.Login(c.Request.Context(), req.Email, req.Password)
 
 	if err != nil {
-		if errors.Is(err, app.ErrInvalidCredentials) {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Sunucu Hatası", "message ": err.Error()})
+		web.HandlerError(c, err)
 		return
 	}
 
@@ -94,11 +83,7 @@ func (h *UserHandler) DeleteCurrentUser(c *gin.Context) {
 	err := h.userService.Delete(c.Request.Context(), actorID, actorID)
 
 	if err != nil {
-		if errors.Is(err, repositories.ErrNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Kullanıcı Bulunamadı"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Sunucu Hatası", "message": err.Error()})
+		web.HandlerError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Hesap başarıyla silindi"})

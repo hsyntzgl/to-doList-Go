@@ -195,8 +195,10 @@ func (s *userService) Delete(ctx context.Context, actorID, targetID string) erro
 
 	if err != nil {
 		if errors.Is(err, repositories.ErrNotFound) {
+
 			return ErrUserNotFound
 		}
+
 		return err
 	}
 
